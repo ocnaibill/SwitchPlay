@@ -1,31 +1,34 @@
 const dgram = require("dgram");
 
-// Porta padrão do Switch LAN Play / ldn_mitm
 const PORT = 11451;
-// Endereço de broadcast da rede Headscale (100.64.0.0/10)
-const BROADCAST_ADDR = "100.127.255.255";
-
 const server = dgram.createSocket("udp4");
-const client = dgram.createSocket("udp4");
 
-client.bind(() => {
-  client.setBroadcast(true);
-});
+const activePeers = new Set();
 
 server.on("message", (msg, rinfo) => {
-  console.log(
-    `Pacote de descoberta recebido de ${rinfo.address}:${rinfo.port}`,
-  );
+  if (rinfo.address.startsWith("100.64.") && !activePeers.has(rinfo.address)) {
+    activePeers.add(rinfo.address);
+    console.log(
+      `[+] Novo console/jogador registrado na rede: ${rinfo.address}`,
+    );
+  }
 
-  client.send(msg, 0, msg.length, PORT, BROADCAST_ADDR, (err) => {
-    if (err) console.error(`Erro ao retransmitir: ${err}`);
-    else console.log("Pacote retransmitido para a VPN!");
+  console.log(`[>>] Pacote de descoberta de ${rinfo.address}:${rinfo.port}`);
+
+  activePeers.forEach((peerIP) => {
+    if (peerIP !== rinfo.address) {
+      server.send(msg, 0, msg.length, PORT, peerIP, (err) => {
+        if (err) {
+          console.error(`[!] Erro ao retransmitir para ${peerIP}: ${err}`);
+        }
+      });
+    }
   });
 });
 
 server.on("listening", () => {
   const address = server.address();
-  console.log(`Relay UDP rodando e escutando na porta ${address.port}`);
+  console.log(` Relay Inteligente (Fan-out) rodando na porta ${address.port}`);
 });
 
 server.bind(PORT);
