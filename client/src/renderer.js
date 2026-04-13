@@ -24,12 +24,19 @@ const elements = {
 
     // Log
     logOutput: document.getElementById('log-output'),
-    btnClearLog: document.getElementById('btn-clear-log')
+    btnClearLog: document.getElementById('btn-clear-log'),
+
+    // Transmitter
+    btnTransmitter: document.getElementById('btn-transmitter'),
+    transmitterPanel: document.getElementById('transmitter-panel'),
+    transmitterIpValue: document.getElementById('transmitter-ip-value'),
+    transmitterSteps: document.getElementById('transmitter-steps')
 };
 
 // --- State ---
 let isConnected = false;
 let isConnecting = false;
+let transmitterActive = false;
 
 // --- Window Controls ---
 elements.btnMinimize.addEventListener('click', () => window.billplay.minimize());
@@ -202,3 +209,37 @@ function addLog(message, level = 'info') {
 
 // --- Initial State ---
 addLog('Aguardando ação do utilizador...', 'info');
+
+// --- Transmitter Mode ---
+elements.btnTransmitter.addEventListener('click', async () => {
+    transmitterActive = !transmitterActive;
+
+    if (transmitterActive) {
+        elements.btnTransmitter.classList.add('active');
+        const info = await window.billplay.getTransmitterInfo();
+
+        if (info.available) {
+            elements.transmitterIpValue.textContent = info.localIP;
+            elements.transmitterSteps.innerHTML = '';
+
+            for (const step of info.instructions) {
+                const p = document.createElement('p');
+                p.className = 'transmitter-step';
+                if (step.includes('Gateway')) {
+                    p.classList.add('highlight');
+                }
+                p.textContent = step;
+                elements.transmitterSteps.appendChild(p);
+            }
+
+            elements.transmitterPanel.classList.remove('hidden');
+        } else {
+            addLog(info.message, 'error');
+            transmitterActive = false;
+            elements.btnTransmitter.classList.remove('active');
+        }
+    } else {
+        elements.btnTransmitter.classList.remove('active');
+        elements.transmitterPanel.classList.add('hidden');
+    }
+});

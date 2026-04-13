@@ -1,9 +1,11 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const ProcessManager = require('./src/processes');
+const TransmitterMode = require('./src/transmitter');
 
 let mainWindow;
 let processManager;
+let transmitter;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -25,8 +27,9 @@ function createWindow() {
 
     mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-    // Init process manager with the window reference
+    // Init process manager and transmitter with the window reference
     processManager = new ProcessManager(mainWindow);
+    transmitter = new TransmitterMode(mainWindow);
 
     // Open devtools in dev mode
     if (process.argv.includes('--dev')) {
@@ -70,6 +73,11 @@ ipcMain.handle('disconnect', async () => {
     } catch (err) {
         return { success: false, error: err.message };
     }
+});
+
+// --- Transmitter mode handler ---
+ipcMain.handle('get-transmitter-info', () => {
+    return transmitter.activate();
 });
 
 // --- App lifecycle ---

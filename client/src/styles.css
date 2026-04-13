@@ -318,6 +318,7 @@ body {
 #action-section {
     display: flex;
     justify-content: center;
+    gap: 12px;
     padding: 4px 0;
 }
 
@@ -393,6 +394,106 @@ body {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* --- Secondary Button --- */
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    padding: 0 20px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-secondary:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    background: var(--bg-elevated);
+    box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.btn-secondary.active {
+    color: var(--accent-light);
+    border-color: var(--accent);
+    background: rgba(108, 92, 231, 0.1);
+}
+
+/* --- Transmitter Panel --- */
+#transmitter-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    animation: slide-down 0.3s ease-out;
+}
+
+@keyframes slide-down {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#transmitter-header {
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+}
+
+#transmitter-content {
+    padding: 20px 24px;
+}
+
+#transmitter-ip {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.transmitter-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.transmitter-ip-big {
+    display: block;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--success);
+    letter-spacing: 1px;
+    text-shadow: 0 0 20px var(--success-glow);
+}
+
+#transmitter-steps {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.transmitter-step {
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.transmitter-step.highlight {
+    color: var(--success);
+    font-weight: 600;
 }
 
 /* --- Log Section --- */

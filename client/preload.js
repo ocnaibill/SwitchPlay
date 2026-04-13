@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('billplay', {
     connect: () => ipcRenderer.invoke('connect'),
     disconnect: () => ipcRenderer.invoke('disconnect'),
 
+    // Transmitter mode
+    getTransmitterInfo: () => ipcRenderer.invoke('get-transmitter-info'),
+
     // Process logs
     onLog: (callback) => {
         ipcRenderer.on('log', (_event, data) => callback(data));

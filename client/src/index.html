@@ -69,6 +69,25 @@
                 <span id="btn-connect-text">Conectar</span>
                 <div id="btn-spinner" class="spinner hidden"></div>
             </button>
+            <button id="btn-transmitter" class="btn-secondary">
+                📡 Modo Transmissor
+            </button>
+        </section>
+
+        <!-- Transmitter Mode Panel (hidden by default) -->
+        <section id="transmitter-panel" class="hidden">
+            <div id="transmitter-header">
+                <span>📡 Modo Transmissor — Switch Físico</span>
+            </div>
+            <div id="transmitter-content">
+                <div id="transmitter-ip">
+                    <span class="transmitter-label">Configure o Gateway do Switch para:</span>
+                    <span id="transmitter-ip-value" class="transmitter-ip-big">—</span>
+                </div>
+                <div id="transmitter-steps">
+                    <!-- Steps filled by renderer.js -->
+                </div>
+            </div>
         </section>
 
         <!-- Log Console -->
