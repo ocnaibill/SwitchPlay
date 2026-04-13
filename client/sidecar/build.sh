@@ -1,5 +1,5 @@
 #!/bin/bash
-# BillPlay - Go Sidecar Cross-Compilation Script
+# SwitchPlay - Go Sidecar Cross-Compilation Script
 # Builds the ts-sidecar binary for Windows, macOS, and Linux
 #
 # Usage: ./build.sh [platform]

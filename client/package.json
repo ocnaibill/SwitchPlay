@@ -1,5 +1,5 @@
 {
-  "name": "billplay",
+  "name": "switchplay",
   "version": "1.0.0",
   "description": "Zero-config LAN Play client for Nintendo Switch over Headscale VPN",
   "main": "main.js",

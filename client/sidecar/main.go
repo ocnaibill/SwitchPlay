@@ -1,4 +1,4 @@
-// BillPlay ts-sidecar
+// SwitchPlay ts-sidecar
 // A lightweight Go binary that uses tsnet to create an invisible
 // VPN connection to the Headscale network. No TUN device needed,
 // no admin privileges required.
@@ -47,9 +47,9 @@ func main() {
 	if nodeName == "" {
 		host, err := os.Hostname()
 		if err != nil {
-			host = "billplay-client"
+			host = "switchplay-client"
 		}
-		nodeName = fmt.Sprintf("billplay-%s", host)
+		nodeName = fmt.Sprintf("switchplay-%s", host)
 	}
 
 	// --- Configure tsnet server ---

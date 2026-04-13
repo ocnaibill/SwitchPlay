@@ -1,5 +1,5 @@
 // ========================================
-// BillPlay — Renderer Process
+// SwitchPlay — Renderer Process
 // Handles UI interactions and status updates
 // ========================================
 
@@ -39,9 +39,9 @@ let isConnecting = false;
 let transmitterActive = false;
 
 // --- Window Controls ---
-elements.btnMinimize.addEventListener('click', () => window.billplay.minimize());
-elements.btnMaximize.addEventListener('click', () => window.billplay.maximize());
-elements.btnClose.addEventListener('click', () => window.billplay.close());
+elements.btnMinimize.addEventListener('click', () => window.switchplay.minimize());
+elements.btnMaximize.addEventListener('click', () => window.switchplay.maximize());
+elements.btnClose.addEventListener('click', () => window.switchplay.close());
 
 // --- Connect/Disconnect ---
 elements.btnConnect.addEventListener('click', async () => {
@@ -50,7 +50,7 @@ elements.btnConnect.addEventListener('click', async () => {
     if (isConnected) {
         setUIState('disconnecting');
         try {
-            await window.billplay.disconnect();
+            await window.switchplay.disconnect();
             setUIState('disconnected');
         } catch (err) {
             addLog(`Erro ao desconectar: ${err}`, 'error');
@@ -59,7 +59,7 @@ elements.btnConnect.addEventListener('click', async () => {
     } else {
         setUIState('connecting');
         try {
-            await window.billplay.connect();
+            await window.switchplay.connect();
             // The actual "connected" state comes from status-update events
         } catch (err) {
             addLog(`Erro ao conectar: ${err}`, 'error');
@@ -69,7 +69,7 @@ elements.btnConnect.addEventListener('click', async () => {
 });
 
 // --- Status Updates from Main Process ---
-window.billplay.onStatusUpdate((data) => {
+window.switchplay.onStatusUpdate((data) => {
     switch (data.type) {
         case 'vpn':
             updateServiceStatus('vpn', data.status, data.message);
@@ -94,7 +94,7 @@ window.billplay.onStatusUpdate((data) => {
 });
 
 // --- Log Stream ---
-window.billplay.onLog((data) => {
+window.switchplay.onLog((data) => {
     addLog(data.message, data.level || 'info');
 });
 
@@ -216,7 +216,7 @@ elements.btnTransmitter.addEventListener('click', async () => {
 
     if (transmitterActive) {
         elements.btnTransmitter.classList.add('active');
-        const info = await window.billplay.getTransmitterInfo();
+        const info = await window.switchplay.getTransmitterInfo();
 
         if (info.available) {
             elements.transmitterIpValue.textContent = info.localIP;

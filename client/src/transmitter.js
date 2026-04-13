@@ -1,5 +1,5 @@
 // ========================================
-// BillPlay — Transmitter Mode
+// SwitchPlay — Transmitter Mode
 // Bridge mode for physical Nintendo Switch.
 // Detects local IP and guides the user to
 // configure the Switch gateway.

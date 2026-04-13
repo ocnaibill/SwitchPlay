@@ -1,5 +1,5 @@
 // ========================================
-// BillPlay — Npcap Detector
+// SwitchPlay — Npcap Detector
 // Checks for Npcap on Windows and launches
 // the silent installer if not present.
 // ========================================

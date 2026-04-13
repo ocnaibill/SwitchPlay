@@ -1,6 +1,6 @@
 /* ========================================
-   BillPlay — Design System
-   Dark gaming aesthetic with neon accents
+   SwitchPlay — Design System
+   Dark gaming aesthetic with red accents
    ======================================== */
 
 /* --- CSS Variables --- */
@@ -15,10 +15,10 @@
     --text-secondary: #8888a0;
     --text-muted: #55556a;
 
-    --accent: #6c5ce7;
-    --accent-glow: rgba(108, 92, 231, 0.35);
-    --accent-light: #a29bfe;
-    --accent-dark: #4834d4;
+    --accent: #e74c3c;
+    --accent-glow: rgba(231, 76, 60, 0.35);
+    --accent-light: #ff6b6b;
+    --accent-dark: #c0392b;
 
     --success: #00e676;
     --success-glow: rgba(0, 230, 118, 0.25);
@@ -28,7 +28,7 @@
     --danger-glow: rgba(255, 82, 82, 0.25);
 
     --border: rgba(255, 255, 255, 0.06);
-    --border-accent: rgba(108, 92, 231, 0.3);
+    --border-accent: rgba(231, 76, 60, 0.3);
 
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -425,7 +425,7 @@ body {
 .btn-secondary.active {
     color: var(--accent-light);
     border-color: var(--accent);
-    background: rgba(108, 92, 231, 0.1);
+    background: rgba(231, 76, 60, 0.1);
 }
 
 /* --- Transmitter Panel --- */

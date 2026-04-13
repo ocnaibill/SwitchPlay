@@ -1,5 +1,5 @@
 // ========================================
-// BillPlay — Process Manager
+// SwitchPlay — Process Manager
 // Manages the lifecycle of the tsnet sidecar
 // and lan-play child processes.
 // ========================================
