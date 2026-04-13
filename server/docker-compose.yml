@@ -13,10 +13,10 @@ services:
     command: serve
     restart: unless-stopped
 
-  udp-relay:
-    build: ./relay
-    container_name: switch-udp-relay
-    network_mode: "host"
-    restart: unless-stopped
-    depends_on:
-      - headscale
+  lan-play-server:
+    image: spacemeowx2/switch-lan-play
+    container_name: switch-lan-play-official
+    restart: always
+    ports:
+      - "11451:11451/udp"
+    command: ["--port", "11451"]
