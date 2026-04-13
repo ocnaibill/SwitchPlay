@@ -8,6 +8,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const NpcapDetector = require('./npcap');
 
 // --- Configuration ---
 const HOMELAB_IP = "100.64.0.2";
@@ -25,6 +26,7 @@ class ProcessManager {
         this.lanPlayProcess = null;
         this.isConnected = false;
         this.isConnecting = false;
+        this.npcap = new NpcapDetector(mainWindow);
     }
 
     // --- Resolve binary paths ---
@@ -229,7 +231,13 @@ class ProcessManager {
             this._sendStatus('server', 'pending', `${LANPLAY_SERVER}`);
             await this._startSidecar();
 
-            // Step 2: Start LAN Play
+            // Step 2: Check Npcap (Windows only)
+            const npcapOk = await this.npcap.ensure();
+            if (!npcapOk) {
+                throw new Error('Npcap is required but could not be installed.');
+            }
+
+            // Step 3: Start LAN Play
             await this._startLanPlay();
 
             // All good
