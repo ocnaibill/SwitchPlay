@@ -36,29 +36,50 @@ class ProcessManager {
 
     // --- Resolve binary paths ---
     // Procura o binário em várias localizações:
-    //   1. bin/<name>-<platform>-<arch>[.exe]  (build de produção)
-    //   2. bin/<name>[.exe]                     (fallback genérico)
-    //   3. sidecar/<name>                       (build de desenvolvimento)
+    // Resolve binary paths for both DEVELOPMENT and PACKAGED modes.
+    //
+    // Empacotado (electron-builder):
+    //   Os binários ficam em process.resourcesPath/bin/
+    //   Ex: SwitchPlay.app/Contents/Resources/bin/ts-sidecar-darwin-arm64
+    //
+    // Desenvolvimento:
+    //   Os binários ficam em client/bin/ ou client/sidecar/
     _getBinPath(name) {
         const platform = os.platform();
         const arch = os.arch();
+        const isPackaged = require('electron').app?.isPackaged ?? false;
 
         let suffix = '';
         if (platform === 'win32') {
             suffix = '.exe';
         }
 
-        const binPath = path.join(__dirname, '..', 'bin', `${name}-${platform}-${arch}${suffix}`);
-        const binFallback = path.join(__dirname, '..', 'bin', `${name}${suffix}`);
-        const devPath = path.join(__dirname, '..', 'sidecar', name);
+        // Mapear nomes do Go (GOOS/GOARCH) para os nomes do Node
+        // Go usa "amd64" mas Node usa "x64"
+        const goArch = arch === 'x64' ? 'amd64' : arch;
 
-        for (const p of [binPath, binFallback, devPath]) {
+        // Lista de caminhos a tentar, em ordem de prioridade
+        const candidates = [];
+
+        if (isPackaged) {
+            // Modo empacotado: binários em Resources/bin/
+            const resPath = process.resourcesPath;
+            candidates.push(path.join(resPath, 'bin', `${name}-${platform}-${goArch}${suffix}`));
+            candidates.push(path.join(resPath, 'bin', `${name}${suffix}`));
+        }
+
+        // Modo dev: binários em client/bin/ ou client/sidecar/
+        candidates.push(path.join(__dirname, '..', 'bin', `${name}-${platform}-${goArch}${suffix}`));
+        candidates.push(path.join(__dirname, '..', 'bin', `${name}${suffix}`));
+        candidates.push(path.join(__dirname, '..', 'sidecar', `${name}${suffix}`));
+
+        for (const p of candidates) {
             if (fs.existsSync(p)) {
                 return p;
             }
         }
 
-        return binPath; // Will fail with a clear error message
+        return candidates[0]; // Will fail with a clear error message
     }
 
     // --- Send messages to renderer via IPC ---
