@@ -1,0 +1,19 @@
+# Dependências do Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Configurações e Dados do Headscale
+data/
+config/
+*.sqlite3
+*.db
+private.key
+noise_private.key
+
+# Variáveis de ambiente
+.env
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
