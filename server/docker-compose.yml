@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  headscale:
+    image: headscale/headscale:latest
+    container_name: headscale-server
+    volumes:
+      - ./headscale/config:/etc/headscale
+      - ./headscale/data:/var/lib/headscale
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    command: headscale serve
+    restart: unless-stopped
+
+  udp-relay:
+    build: ./relay
+    container_name: switch-udp-relay
+    network_mode: "host"
+    restart: unless-stopped
+    depends_on:
+      - headscale
