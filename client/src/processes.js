@@ -2,6 +2,12 @@
 // SwitchPlay — Process Manager
 // Manages the lifecycle of the tsnet sidecar
 // and lan-play child processes.
+//
+// O sidecar Go é lançado como child_process oculto.
+// A comunicação é feita via stdout com marcadores:
+//   [VPN_CONNECTED] <ip>  → VPN ativa
+//   [VPN_ERROR] <msg>     → Erro
+//   [LOG] <msg>           → Log genérico
 // ========================================
 
 const { spawn } = require('child_process');
@@ -10,14 +16,12 @@ const os = require('os');
 const fs = require('fs');
 const NpcapDetector = require('./npcap');
 
-// --- Configuration ---
+// ==========================================
+// Configuração Hardcoded — Zero-Config
+// ==========================================
 const HOMELAB_IP = "100.64.0.2";
 const LANPLAY_PORT = "11451";
 const LANPLAY_SERVER = `${HOMELAB_IP}:${LANPLAY_PORT}`;
-
-// Auth key injected at build time via .env
-const AUTH_KEY = process.env.TS_AUTH_KEY || '';
-const CONTROL_URL = process.env.TS_CONTROL_URL || '';
 
 class ProcessManager {
     constructor(mainWindow) {
@@ -26,10 +30,15 @@ class ProcessManager {
         this.lanPlayProcess = null;
         this.isConnected = false;
         this.isConnecting = false;
+        this.vpnIP = null;            // IP recebido da Tailnet (100.64.x.x)
         this.npcap = new NpcapDetector(mainWindow);
     }
 
     // --- Resolve binary paths ---
+    // Procura o binário em várias localizações:
+    //   1. bin/<name>-<platform>-<arch>[.exe]  (build de produção)
+    //   2. bin/<name>[.exe]                     (fallback genérico)
+    //   3. sidecar/<name>                       (build de desenvolvimento)
     _getBinPath(name) {
         const platform = os.platform();
         const arch = os.arch();
@@ -39,22 +48,20 @@ class ProcessManager {
             suffix = '.exe';
         }
 
-        // In development, look in sidecar/ build output or bin/
-        const devPath = path.join(__dirname, 'sidecar', name);
-        const binPath = path.join(__dirname, 'bin', `${name}-${platform}-${arch}${suffix}`);
-        const binFallback = path.join(__dirname, 'bin', `${name}${suffix}`);
+        const binPath = path.join(__dirname, '..', 'bin', `${name}-${platform}-${arch}${suffix}`);
+        const binFallback = path.join(__dirname, '..', 'bin', `${name}${suffix}`);
+        const devPath = path.join(__dirname, '..', 'sidecar', name);
 
-        // Try in order: platform-specific binary, generic binary, dev build
         for (const p of [binPath, binFallback, devPath]) {
             if (fs.existsSync(p)) {
                 return p;
             }
         }
 
-        return binPath; // Will fail with a clear error
+        return binPath; // Will fail with a clear error message
     }
 
-    // --- Send messages to renderer ---
+    // --- Send messages to renderer via IPC ---
     _sendStatus(type, status, message) {
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('status-update', { type, status, message });
@@ -67,56 +74,62 @@ class ProcessManager {
         }
     }
 
-    // --- Start VPN Sidecar ---
+    // ==========================================
+    // SIDECAR VPN (Go tsnet)
+    // ==========================================
+    // Inicia o binário Go como child_process oculto.
+    // Lê o stdout linha por linha; quando detecta
+    // [VPN_CONNECTED], resolve a Promise e notifica a UI.
     async _startSidecar() {
         return new Promise((resolve, reject) => {
             const sidecarPath = this._getBinPath('ts-sidecar');
 
+            // Verificar se o binário existe
             if (!fs.existsSync(sidecarPath)) {
-                const err = `Sidecar binary not found: ${sidecarPath}`;
+                const err = `Binário sidecar não encontrado: ${sidecarPath}`;
                 this._sendLog(err, 'error');
                 return reject(new Error(err));
             }
 
-            if (!AUTH_KEY) {
-                const err = 'No auth key configured. Set TS_AUTH_KEY environment variable.';
-                this._sendLog(err, 'error');
-                return reject(new Error(err));
-            }
-
-            const args = ['--key', AUTH_KEY];
-            if (CONTROL_URL) {
-                args.push('--server', CONTROL_URL);
-            }
-
-            this._sendLog(`Starting VPN sidecar...`, 'vpn');
+            this._sendLog('Iniciando VPN sidecar (tsnet)...', 'vpn');
             this._sendStatus('vpn', 'connecting', 'Conectando...');
 
-            this.sidecarProcess = spawn(sidecarPath, args, {
-                stdio: ['pipe', 'pipe', 'pipe']
+            // Spawn do binário Go de forma OCULTA (windowsHide)
+            // O sidecar não precisa de argumentos — tudo é hardcoded
+            this.sidecarProcess = spawn(sidecarPath, [], {
+                stdio: ['pipe', 'pipe', 'pipe'],
+                windowsHide: true    // Esconde a janela do console no Windows
             });
 
             let resolved = false;
 
+            // --- Ler stdout do sidecar linha por linha ---
             this.sidecarProcess.stdout.on('data', (data) => {
                 const lines = data.toString().trim().split('\n');
                 for (const line of lines) {
                     this._parseSidecarOutput(line);
 
-                    // Resolve the promise when connected
-                    if (!resolved && line.includes('STATUS:CONNECTED')) {
+                    // Quando detectar [VPN_CONNECTED], a VPN está ativa
+                    if (!resolved && line.includes('[VPN_CONNECTED]')) {
                         resolved = true;
+
+                        // Extrair o IP da linha: "[VPN_CONNECTED] 100.64.x.x"
+                        const parts = line.split(' ');
+                        if (parts.length > 1) {
+                            this.vpnIP = parts[1];
+                        }
+
                         resolve();
                     }
                 }
             });
 
             this.sidecarProcess.stderr.on('data', (data) => {
-                this._sendLog(`[SIDECAR STDERR] ${data.toString().trim()}`, 'warning');
+                this._sendLog(`[SIDECAR] ${data.toString().trim()}`, 'warning');
             });
 
             this.sidecarProcess.on('error', (err) => {
-                this._sendLog(`Sidecar error: ${err.message}`, 'error');
+                this._sendLog(`Erro ao iniciar sidecar: ${err.message}`, 'error');
                 this._sendStatus('vpn', 'error', 'Erro');
                 if (!resolved) {
                     resolved = true;
@@ -125,75 +138,83 @@ class ProcessManager {
             });
 
             this.sidecarProcess.on('close', (code) => {
-                this._sendLog(`Sidecar process exited (code: ${code})`, code === 0 ? 'info' : 'error');
+                this._sendLog(
+                    `Sidecar encerrado (código: ${code})`,
+                    code === 0 ? 'info' : 'error'
+                );
                 this.sidecarProcess = null;
+                this.vpnIP = null;
                 this._sendStatus('vpn', 'error', 'Desconectado');
 
-                // If we never connected, reject
                 if (!resolved) {
                     resolved = true;
-                    reject(new Error(`Sidecar exited with code ${code}`));
+                    reject(new Error(`Sidecar encerrou com código ${code}`));
                 }
             });
 
-            // Timeout after 60s
+            // Timeout de 60s para a conexão
             setTimeout(() => {
                 if (!resolved) {
                     resolved = true;
-                    reject(new Error('Sidecar connection timeout (60s)'));
+                    reject(new Error('Timeout de conexão VPN (60s)'));
                 }
             }, 60000);
         });
     }
 
-    // --- Parse sidecar stdout protocol ---
+    // --- Interpretar stdout do sidecar ---
+    // Protocolo: [VPN_CONNECTING], [VPN_CONNECTED] ip, [VPN_ERROR] msg, [LOG] msg
     _parseSidecarOutput(line) {
-        if (line.startsWith('STATUS:')) {
-            const status = line.substring(7);
+        if (line.includes('[VPN_CONNECTING]')) {
+            this._sendStatus('vpn', 'connecting', 'Conectando...');
 
-            if (status === 'CONNECTING') {
-                this._sendStatus('vpn', 'connecting', 'Conectando...');
-            } else if (status === 'CONNECTED') {
-                this._sendStatus('vpn', 'active', 'Ativa');
-            } else if (status === 'DISCONNECTING') {
-                this._sendStatus('vpn', 'pending', 'Desconectando...');
-            } else if (status === 'DISCONNECTED') {
-                this._sendStatus('vpn', 'error', 'Desconectada');
-            } else if (status.startsWith('ERROR:')) {
-                const msg = status.substring(6);
-                this._sendStatus('vpn', 'error', msg);
-                this._sendLog(`VPN Error: ${msg}`, 'error');
-            }
-        } else if (line.startsWith('LOG:')) {
-            this._sendLog(line.substring(4), 'vpn');
+        } else if (line.includes('[VPN_CONNECTED]')) {
+            const ip = line.split(' ')[1] || '';
+            this._sendStatus('vpn', 'active', `Ativa (${ip})`);
+            this._sendLog(`VPN conectada! IP na Tailnet: ${ip}`, 'success');
+
+        } else if (line.includes('[VPN_ERROR]')) {
+            const msg = line.replace(/.*\[VPN_ERROR\]\s*/, '');
+            this._sendStatus('vpn', 'error', msg);
+            this._sendLog(`VPN Erro: ${msg}`, 'error');
+
+        } else if (line.includes('[VPN_DISCONNECTED]')) {
+            this._sendStatus('vpn', 'error', 'Desconectada');
+            this._sendLog('VPN desconectada.', 'warning');
+
+        } else if (line.includes('[LOG]')) {
+            const msg = line.replace(/.*\[LOG\]\s*/, '');
+            this._sendLog(msg, 'vpn');
         }
     }
 
-    // --- Start LAN Play ---
+    // ==========================================
+    // LAN PLAY
+    // ==========================================
     _startLanPlay() {
         return new Promise((resolve, reject) => {
             const lanPlayPath = this._getBinPath('lan-play');
 
             if (!fs.existsSync(lanPlayPath)) {
-                const err = `lan-play binary not found: ${lanPlayPath}`;
+                const err = `Binário lan-play não encontrado: ${lanPlayPath}`;
                 this._sendLog(err, 'error');
                 return reject(new Error(err));
             }
 
-            this._sendLog(`Starting LAN Play → ${LANPLAY_SERVER}`, 'info');
+            this._sendLog(`Iniciando LAN Play → ${LANPLAY_SERVER}`, 'info');
             this._sendStatus('lanplay', 'connecting', 'Iniciando...');
 
             this.lanPlayProcess = spawn(lanPlayPath, [
                 '--relay-server-addr', LANPLAY_SERVER
             ], {
-                stdio: ['pipe', 'pipe', 'pipe']
+                stdio: ['pipe', 'pipe', 'pipe'],
+                windowsHide: true
             });
 
             this.lanPlayProcess.stdout.on('data', (data) => {
                 const output = data.toString().trim();
                 this._sendLog(`[LAN-PLAY] ${output}`, 'info');
 
-                // Detect when lan-play is ready
                 if (output.includes('listening') || output.includes('connected') || output.includes('Ready')) {
                     this._sendStatus('lanplay', 'active', 'Ativo');
                     resolve();
@@ -205,42 +226,48 @@ class ProcessManager {
             });
 
             this.lanPlayProcess.on('error', (err) => {
-                this._sendLog(`LAN Play error: ${err.message}`, 'error');
+                this._sendLog(`LAN Play erro: ${err.message}`, 'error');
                 this._sendStatus('lanplay', 'error', 'Erro');
                 reject(err);
             });
 
             this.lanPlayProcess.on('close', (code) => {
-                this._sendLog(`LAN Play exited (code: ${code})`, code === 0 ? 'info' : 'error');
+                this._sendLog(
+                    `LAN Play encerrado (código: ${code})`,
+                    code === 0 ? 'info' : 'error'
+                );
                 this.lanPlayProcess = null;
                 this._sendStatus('lanplay', 'error', 'Parado');
             });
 
-            // Resolve after 3s if no explicit ready signal
+            // Resolve após 3s se não houver sinal explícito de ready
             setTimeout(() => resolve(), 3000);
         });
     }
 
-    // --- Connect (orchestrate both processes) ---
+    // ==========================================
+    // ORQUESTRAÇÃO — Conectar
+    // ==========================================
+    // Sequência: VPN → Npcap check → LAN Play
     async connect() {
         if (this.isConnected || this.isConnecting) return;
         this.isConnecting = true;
 
         try {
-            // Step 1: Start VPN
-            this._sendStatus('server', 'pending', `${LANPLAY_SERVER}`);
+            // Passo 1: Iniciar VPN invisível (tsnet sidecar)
+            this._sendStatus('server', 'pending', LANPLAY_SERVER);
             await this._startSidecar();
 
-            // Step 2: Check Npcap (Windows only)
+            // Passo 2: Verificar Npcap (apenas Windows)
             const npcapOk = await this.npcap.ensure();
             if (!npcapOk) {
-                throw new Error('Npcap is required but could not be installed.');
+                throw new Error('Npcap é necessário mas não pôde ser instalado.');
             }
 
-            // Step 3: Start LAN Play
+            // Passo 3: Iniciar LAN Play apontando para o servidor
             await this._startLanPlay();
 
-            // All good
+            // Tudo OK — notificar a UI
             this.isConnected = true;
             this.isConnecting = false;
             this._sendStatus('server', 'active', LANPLAY_SERVER);
@@ -253,9 +280,11 @@ class ProcessManager {
         }
     }
 
-    // --- Disconnect (kill both processes) ---
+    // ==========================================
+    // ORQUESTRAÇÃO — Desconectar
+    // ==========================================
     async disconnect() {
-        this._sendLog('Shutting down...', 'warning');
+        this._sendLog('Encerrando processos...', 'warning');
 
         if (this.lanPlayProcess) {
             this.lanPlayProcess.kill('SIGTERM');
@@ -269,10 +298,11 @@ class ProcessManager {
 
         this.isConnected = false;
         this.isConnecting = false;
+        this.vpnIP = null;
         this._sendStatus('global', 'disconnected', 'Desconectado');
     }
 
-    // --- Cleanup on app quit ---
+    // --- Cleanup forçado ao fechar o app ---
     cleanup() {
         if (this.lanPlayProcess) {
             this.lanPlayProcess.kill('SIGKILL');

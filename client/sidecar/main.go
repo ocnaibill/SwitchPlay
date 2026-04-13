@@ -1,88 +1,117 @@
 // SwitchPlay ts-sidecar
-// A lightweight Go binary that uses tsnet to create an invisible
-// VPN connection to the Headscale network. No TUN device needed,
-// no admin privileges required.
+// VPN invisível usando tsnet (Tailscale nativo em Go).
+// Conecta automaticamente ao Headscale sem instalar cliente VPN no SO.
+// Sem placa de rede virtual, sem permissões de admin.
 //
-// Usage:
-//   ts-sidecar --key <PRE_AUTH_KEY> [--server <HEADSCALE_URL>] [--hostname <NAME>]
-//
-// Communication with Electron:
-//   stdout lines are parsed by the Electron main process:
-//     STATUS:CONNECTING  - VPN is trying to connect
-//     STATUS:CONNECTED   - VPN tunnel is up
-//     STATUS:ERROR:<msg>  - Something went wrong
-//     LOG:<message>       - General log output
+// Protocolo stdout (lido pelo Electron main process):
+//   [VPN_CONNECTING]            → Tentando conectar
+//   [VPN_CONNECTED] <ip>        → Túnel ativo, IP recebido
+//   [VPN_ERROR] <mensagem>      → Algo correu mal
+//   [VPN_DISCONNECTED]          → Sidecar encerrado
+//   [LOG] <mensagem>            → Log genérico
 
 package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
 	"tailscale.com/tsnet"
 )
 
-func main() {
-	// --- Flags ---
-	authKey := flag.String("key", "", "Tailscale/Headscale pre-auth key")
-	controlURL := flag.String("server", "", "Headscale control server URL (e.g. https://hs.example.com)")
-	hostname := flag.String("hostname", "", "Hostname for this node on the tailnet")
-	stateDir := flag.String("state-dir", "", "Directory to store tsnet state (default: auto)")
-	flag.Parse()
+// ==========================================
+// Configuração Hardcoded — Zero-Config
+// ==========================================
+const (
+	// URL do servidor Headscale (Control Server)
+	controlURL = "https://switch.ocnaibill.dev"
 
-	if *authKey == "" {
-		fmt.Println("STATUS:ERROR:No auth key provided. Use --key flag.")
+	// Pre-Auth Key reutilizável do Headscale
+	// Permite que cada cliente se registe automaticamente sem login
+	authKey = "hskey-auth-kQWNDibzhdpg-hdnBtFBei8-b_RtbRxgpg2o1Tff7Wp6ML8WpTFl5KdkT9iL8DsBninvMok9Wy7ek"
+
+	// IP do servidor LAN Play (Proxmox na tailnet)
+	lanPlayServer = "100.64.0.2:11451"
+)
+
+// getStateDir retorna o caminho para armazenar o estado do tsnet.
+// Windows: %APPDATA%\SwitchPlay\vpn-state
+// macOS:   ~/Library/Application Support/SwitchPlay/vpn-state
+// Linux:   ~/.config/switchplay/vpn-state
+func getStateDir() string {
+	var baseDir string
+
+	switch runtime.GOOS {
+	case "windows":
+		baseDir = os.Getenv("APPDATA")
+		if baseDir == "" {
+			baseDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming")
+		}
+		return filepath.Join(baseDir, "SwitchPlay", "vpn-state")
+
+	case "darwin":
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, "Library", "Application Support", "SwitchPlay", "vpn-state")
+
+	default: // linux e outros
+		configDir := os.Getenv("XDG_CONFIG_HOME")
+		if configDir == "" {
+			home, _ := os.UserHomeDir()
+			configDir = filepath.Join(home, ".config")
+		}
+		return filepath.Join(configDir, "switchplay", "vpn-state")
+	}
+}
+
+func main() {
+	// --- Gerar hostname único para este nó ---
+	host, err := os.Hostname()
+	if err != nil {
+		host = "switchplay-client"
+	}
+	nodeName := fmt.Sprintf("switchplay-%s", host)
+
+	// --- Diretório de estado persistente ---
+	stateDir := getStateDir()
+	if err := os.MkdirAll(stateDir, 0700); err != nil {
+		fmt.Printf("[VPN_ERROR] Falha ao criar diretório de estado: %v\n", err)
 		os.Exit(1)
 	}
 
-	// --- Build hostname ---
-	nodeName := *hostname
-	if nodeName == "" {
-		host, err := os.Hostname()
-		if err != nil {
-			host = "switchplay-client"
-		}
-		nodeName = fmt.Sprintf("switchplay-%s", host)
-	}
-
-	// --- Configure tsnet server ---
+	// --- Configurar o servidor tsnet ---
+	// tsnet abre sockets diretamente na Tailnet, sem criar
+	// uma placa de rede virtual (TUN). Zero permissões de admin.
 	srv := &tsnet.Server{
-		Hostname: nodeName,
-		AuthKey:  *authKey,
-		Logf:     func(format string, args ...any) { fmt.Printf("LOG:"+format+"\n", args...) },
+		Hostname:   nodeName,
+		AuthKey:    authKey,
+		ControlURL: controlURL,
+		Dir:        stateDir,
+		Logf:       func(format string, args ...any) { fmt.Printf("[LOG] "+format+"\n", args...) },
 	}
 
-	// Use custom control URL if provided (Headscale)
-	if *controlURL != "" {
-		srv.ControlURL = *controlURL
-	}
+	fmt.Println("[VPN_CONNECTING]")
+	fmt.Printf("[LOG] Conectando como '%s' ao servidor %s...\n", nodeName, controlURL)
+	fmt.Printf("[LOG] Estado armazenado em: %s\n", stateDir)
 
-	// Use custom state directory if provided
-	if *stateDir != "" {
-		srv.Dir = *stateDir
-	}
-
-	fmt.Println("STATUS:CONNECTING")
-	fmt.Printf("LOG:Connecting as '%s'...\n", nodeName)
-
-	// --- Start the tsnet server ---
+	// --- Iniciar o tsnet (bloqueante até conectar ou timeout) ---
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	status, err := srv.Up(ctx)
 	if err != nil {
-		fmt.Printf("STATUS:ERROR:%v\n", err)
-		log.Fatalf("Failed to start tsnet: %v", err)
+		fmt.Printf("[VPN_ERROR] %v\n", err)
+		log.Fatalf("Falha ao iniciar tsnet: %v", err)
 	}
 
-	// Print our Tailnet IP
+	// --- Extrair o IP 100.64.x.x atribuído ---
 	var selfIP string
 	for _, addr := range status.TailscaleIPs {
 		if addr.Is4() {
@@ -91,35 +120,35 @@ func main() {
 		}
 	}
 
-	fmt.Printf("LOG:Node online. Tailnet IP: %s\n", selfIP)
-	fmt.Println("STATUS:CONNECTED")
+	// Esta é a linha que o Electron procura para saber que a VPN está ativa
+	fmt.Printf("[VPN_CONNECTED] %s\n", selfIP)
+	fmt.Printf("[LOG] Nó online na Tailnet. IP: %s\n", selfIP)
 
-	// --- Verify connectivity to the LAN Play server ---
+	// --- Health check periódico ao servidor LAN Play ---
 	go func() {
 		for {
 			time.Sleep(30 * time.Second)
-			conn, err := net.DialTimeout("udp", "100.64.0.2:11451", 5*time.Second)
+			conn, err := net.DialTimeout("udp", lanPlayServer, 5*time.Second)
 			if err != nil {
-				fmt.Printf("LOG:Health check failed: %v\n", err)
+				fmt.Printf("[LOG] Health check falhou: %v\n", err)
 			} else {
 				conn.Close()
-				fmt.Println("LOG:Health check OK - server reachable")
+				fmt.Printf("[LOG] Health check OK — %s acessível\n", lanPlayServer)
 			}
 		}
 	}()
 
-	// --- Wait for shutdown signal ---
+	// --- Aguardar sinal de encerramento (SIGINT/SIGTERM) ---
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	sig := <-sigCh
-	fmt.Printf("LOG:Received signal %v, shutting down...\n", sig)
-	fmt.Println("STATUS:DISCONNECTING")
+	fmt.Printf("[LOG] Sinal recebido: %v. Encerrando...\n", sig)
 
 	if err := srv.Close(); err != nil {
-		fmt.Printf("LOG:Error during shutdown: %v\n", err)
+		fmt.Printf("[LOG] Erro ao encerrar: %v\n", err)
 	}
 
-	fmt.Println("STATUS:DISCONNECTED")
-	fmt.Println("LOG:Sidecar stopped cleanly.")
+	fmt.Println("[VPN_DISCONNECTED]")
+	fmt.Println("[LOG] Sidecar encerrado corretamente.")
 }
