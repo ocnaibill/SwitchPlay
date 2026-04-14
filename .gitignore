@@ -17,7 +17,7 @@ noise_private.key
 # Go Binários compilados
 client/sidecar/ts-sidecar
 client/sidecar/ts-sidecar.exe
-client/bin/
+# client/bin/
 
 # Electron Build Output
 client/dist/
@@ -26,3 +26,4 @@ client/out/
 # Arquivos de Sistema Operacional
 .DS_Store
 Thumbs.db
+client/bin/ts-sidecar*
