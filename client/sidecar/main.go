@@ -14,18 +14,18 @@ package main
 
 import (
 	"context"
-        "flag"
-        "fmt"
-        "log"
-        "net"
-        "os"
-        "os/signal"
-        "path/filepath"
-        "runtime"
-        "syscall"
-        "time"
+	"flag"
+	"fmt"
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"runtime"
+	"syscall"
+	"time"
 
-        "tailscale.com/tsnet"
+	"tailscale.com/tsnet"
 )
 
 // ==========================================
