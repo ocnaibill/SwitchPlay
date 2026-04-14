@@ -1,18 +1,23 @@
 #!/bin/bash
-# SwitchPlay - Go Sidecar Cross-Compilation Script
-# Builds the ts-sidecar binary for Windows, macOS, and Linux
+# ==========================================
+# SwitchPlay — Go Sidecar Build Script
+# Cross-compiles ts-sidecar for all platforms.
 #
 # Usage: ./build.sh [platform]
 #   platform: all (default), windows, darwin, linux
+# ==========================================
 
 set -e
 
 SIDECAR_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUTPUT_DIR="${SIDECAR_DIR}/../bin"
-MODULE_NAME="github.com/ocnaibill/switch-lan-relay/client/sidecar"
 
 # Version from git tag or fallback
 VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+
+# --- Build ldflags with injected secrets ---
+LDFLAGS="-s -w"
+LDFLAGS="${LDFLAGS} -X main.Version=${VERSION}"
 
 echo "🔨 Building ts-sidecar ${VERSION}..."
 echo ""
@@ -28,7 +33,7 @@ build_target() {
     echo "  → ${os}/${arch}..."
 
     GOOS=${os} GOARCH=${arch} go build \
-        -ldflags="-s -w -X main.Version=${VERSION}" \
+        -ldflags="${LDFLAGS}" \
         -o "${output}" \
         "${SIDECAR_DIR}"
 

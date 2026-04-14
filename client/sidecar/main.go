@@ -14,33 +14,34 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"net"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"runtime"
-	"syscall"
-	"time"
+        "flag"
+        "fmt"
+        "log"
+        "net"
+        "os"
+        "os/signal"
+        "path/filepath"
+        "runtime"
+        "syscall"
+        "time"
 
-	"tailscale.com/tsnet"
+        "tailscale.com/tsnet"
 )
 
 // ==========================================
-// Configuração Hardcoded — Zero-Config
+// Runtime variables — injected via flags
 // ==========================================
-const (
-	// URL do servidor Headscale (Control Server)
-	controlURL = "https://switch.ocnaibill.dev"
+var (
+        // URL do servidor Headscale (Control Server)
+        controlURL string
 
-	// Pre-Auth Key reutilizável do Headscale
-	// Permite que cada cliente se registe automaticamente sem login
-	authKey = "hskey-auth-kQWNDibzhdpg-hdnBtFBei8-b_RtbRxgpg2o1Tff7Wp6ML8WpTFl5KdkT9iL8DsBninvMok9Wy7ek"
+        // Pre-Auth Key reutilizável do Headscale
+        authKey string
 
-	// IP do servidor LAN Play (Proxmox na tailnet)
-	lanPlayServer = "100.64.0.2:11451"
-)
+        // IP do servidor LAN Play na tailnet (para health checks)
+        lanPlayServer string
+
+        // Version metadata
 
 // getStateDir retorna o caminho para armazenar o estado do tsnet.
 // Windows: %APPDATA%\SwitchPlay\vpn-state
@@ -72,6 +73,20 @@ func getStateDir() string {
 }
 
 func main() {
+        flag.StringVar(&authKey, "auth-key", "", "Control Server Auth Key")
+        flag.StringVar(&controlURL, "control-url", "", "Control Server URL")
+        flag.StringVar(&lanPlayServer, "lan-play-server", "100.64.0.2:11451", "LAN Play server IP:PORT on Tailnet")
+        flag.Parse()
+
+        // --- Validar variáveis injectadas ---
+        if authKey == "" {
+                fmt.Println("[VPN_ERROR] Auth key not set. Please provide it via -auth-key flag.")
+                os.Exit(1)
+        }
+        if controlURL == "" {
+                fmt.Println("[VPN_ERROR] Control URL not set. Please provide it via -control-url flag.")
+	}
+
 	// --- Gerar hostname único para este nó ---
 	host, err := os.Hostname()
 	if err != nil {
@@ -89,7 +104,7 @@ func main() {
 	// --- Forçar login com auth key ---
 	// Sem isto, se o tsnet encontrar estado anterior (mesmo falhado),
 	// ele ignora a auth key e fica preso. Com TSNET_FORCE_LOGIN=1
-	// ele usa sempre a chave hardcoded — zero intervenção do utilizador.
+	// ele usa sempre a chave injectada — zero intervenção do utilizador.
 	os.Setenv("TSNET_FORCE_LOGIN", "1")
 
 	// --- Configurar o servidor tsnet ---
@@ -104,6 +119,7 @@ func main() {
 	}
 
 	fmt.Println("[VPN_CONNECTING]")
+	fmt.Printf("[LOG] SwitchPlay sidecar %s\n", Version)
 	fmt.Printf("[LOG] Conectando como '%s' ao servidor %s...\n", nodeName, controlURL)
 	fmt.Printf("[LOG] Estado armazenado em: %s\n", stateDir)
 
