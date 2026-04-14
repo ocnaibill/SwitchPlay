@@ -30,13 +30,33 @@ const elements = {
     btnTransmitter: document.getElementById('btn-transmitter'),
     transmitterPanel: document.getElementById('transmitter-panel'),
     transmitterIpValue: document.getElementById('transmitter-ip-value'),
-    transmitterSteps: document.getElementById('transmitter-steps')
+    transmitterSteps: document.getElementById('transmitter-steps'),
+
+    // Settings
+    inputControlUrl: document.getElementById('input-controlurl'),
+    inputAuthKey: document.getElementById('input-authkey'),
+    inputLanPlay: document.getElementById('input-lanplay')
 };
 
 // --- State ---
 let isConnected = false;
 let isConnecting = false;
 let transmitterActive = false;
+
+// --- Load Settings ---
+function loadSettings() {
+    elements.inputControlUrl.value = localStorage.getItem('sp_control_url') || '';
+    elements.inputAuthKey.value = localStorage.getItem('sp_auth_key') || '';
+    elements.inputLanPlay.value = localStorage.getItem('sp_lan_play') || '100.64.0.2:11451';
+}
+
+function saveSettings() {
+    localStorage.setItem('sp_control_url', elements.inputControlUrl.value.trim());
+    localStorage.setItem('sp_auth_key', elements.inputAuthKey.value.trim());
+    localStorage.setItem('sp_lan_play', elements.inputLanPlay.value.trim());
+}
+
+loadSettings();
 
 // --- Window Controls ---
 elements.btnMinimize.addEventListener('click', () => window.switchplay.minimize());
@@ -58,8 +78,23 @@ elements.btnConnect.addEventListener('click', async () => {
         }
     } else {
         setUIState('connecting');
+
+        saveSettings();
+        
+        const config = {
+            controlUrl: elements.inputControlUrl.value.trim(),
+            authKey: elements.inputAuthKey.value.trim(),
+            lanPlay: elements.inputLanPlay.value.trim() || '100.64.0.2:11451'
+        };
+
+        if (!config.controlUrl || !config.authKey) {
+            addLog('Erro: Preencha Headscale URL e Auth Key nas configurações primeiro.', 'error');
+            setUIState('disconnected');
+            return;
+        }
+
         try {
-            await window.switchplay.connect();
+            await window.switchplay.connect(config);
             // The actual "connected" state comes from status-update events
         } catch (err) {
             addLog(`Erro ao conectar: ${err}`, 'error');

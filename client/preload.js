@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('switchplay', {
     },
 
     // Connection controls
-    connect: () => ipcRenderer.invoke('connect'),
+    connect: (config) => ipcRenderer.invoke('connect', config),
     disconnect: () => ipcRenderer.invoke('disconnect'),
 
     // Transmitter mode

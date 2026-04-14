@@ -115,9 +115,14 @@ class ProcessManager {
             this._sendLog('Iniciando VPN sidecar (tsnet)...', 'vpn');
             this._sendStatus('vpn', 'connecting', 'Conectando...');
 
+            const serverUrl = this.currentConfig.lanPlay || '100.64.0.2:11451';
+
             // Spawn do binário Go de forma OCULTA (windowsHide)
-            // O sidecar não precisa de argumentos — tudo é hardcoded
-            this.sidecarProcess = spawn(sidecarPath, [], {
+            this.sidecarProcess = spawn(sidecarPath, [
+                '-auth-key', this.currentConfig.authKey,
+                '-control-url', this.currentConfig.controlUrl,
+                '-lan-play-server', serverUrl
+            ], {
                 stdio: ['pipe', 'pipe', 'pipe'],
                 windowsHide: true    // Esconde a janela do console no Windows
             });
@@ -215,6 +220,7 @@ class ProcessManager {
     _startLanPlay() {
         return new Promise((resolve, reject) => {
             const lanPlayPath = this._getBinPath('lan-play');
+            const serverUrl = this.currentConfig.lanPlay || '100.64.0.2:11451';
 
             if (!fs.existsSync(lanPlayPath)) {
                 const err = `Binário lan-play não encontrado: ${lanPlayPath}`;
@@ -222,11 +228,11 @@ class ProcessManager {
                 return reject(new Error(err));
             }
 
-            this._sendLog(`Iniciando LAN Play → ${LANPLAY_SERVER}`, 'info');
+            this._sendLog(`Iniciando LAN Play → ${serverUrl}`, 'info');
             this._sendStatus('lanplay', 'connecting', 'Iniciando...');
 
             this.lanPlayProcess = spawn(lanPlayPath, [
-                '--relay-server-addr', LANPLAY_SERVER
+                '--relay-server-addr', serverUrl
             ], {
                 stdio: ['pipe', 'pipe', 'pipe'],
                 windowsHide: true
@@ -273,14 +279,15 @@ class ProcessManager {
     // ORQUESTRAÇÃO — Conectar
     // ==========================================
     // Sequência: VPN → Npcap check → LAN Play
-    async connect() {
+    async connect(config) {
         if (this.isConnected || this.isConnecting) return;
         this.isConnecting = true;
+        this.currentConfig = config;
 
         try {
             // Passo 1: Iniciar VPN invisível (tsnet sidecar)
-            this._sendStatus('server', 'pending', LANPLAY_SERVER);
-            await this._startSidecar();
+            this._sendStatus('server', 'pending', config.lanPlay);
+            await this._startSidecar(config);
 
             // Passo 2: Verificar Npcap (apenas Windows)
             const npcapOk = await this.npcap.ensure();

@@ -41,6 +41,28 @@
             <p id="app-subtitle">Conecte, jogue, domine — sem configuração.</p>
         </section>
 
+        <!-- Settings Section -->
+        <section id="settings-card" class="card">
+            <div id="settings-header" class="pointer" onclick="document.getElementById('settings-content').classList.toggle('hidden')">
+                <span>⚙️ Configurações</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div id="settings-content" class="hidden">
+                <div class="input-group">
+                    <label for="input-controlurl">Headscale URL</label>
+                    <input type="url" id="input-controlurl" placeholder="https://switch.yourdomain.com">
+                </div>
+                <div class="input-group">
+                    <label for="input-authkey">Tailscale Auth Key</label>
+                    <input type="password" id="input-authkey" placeholder="hskey-auth-...">
+                </div>
+                <div class="input-group">
+                    <label for="input-lanplay">Servidor LAN Play IP:PORT</label>
+                    <input type="text" id="input-lanplay" placeholder="100.64.0.2:11451" value="100.64.0.2:11451">
+                </div>
+            </div>
+        </section>
+
         <!-- Status Card -->
         <section id="status-card">
             <div id="status-indicator">

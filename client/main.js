@@ -57,9 +57,9 @@ ipcMain.on('window-close', () => {
 });
 
 // --- Connection handlers ---
-ipcMain.handle('connect', async () => {
+ipcMain.handle('connect', async (event, config) => {
     try {
-        await processManager.connect();
+        await processManager.connect(config);
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
