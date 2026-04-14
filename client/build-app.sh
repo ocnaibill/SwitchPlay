@@ -82,18 +82,25 @@ echo ""
 # ---- Step 3: Package with electron-builder ----
 echo "📦 Step 3: Packaging with electron-builder..."
 
+# Inherit GH_TOKEN for github releases publishing
+export GH_TOKEN="${GH_TOKEN:-}"
+PUBLISH_FLAG=""
+if [ -n "$GITHUB_ACTIONS" ]; then
+    PUBLISH_FLAG="--publish always"
+fi
+
 case ${PLATFORM} in
     mac)
-        npm run build:mac
+        npm run build:mac -- $PUBLISH_FLAG
         ;;
     win)
-        npm run build:win
+        npm run build:win -- $PUBLISH_FLAG
         ;;
     linux)
-        npm run build:linux
+        npm run build:linux -- $PUBLISH_FLAG
         ;;
     all)
-        npm run build:all
+        npm run build:all -- $PUBLISH_FLAG
         ;;
 esac
 
