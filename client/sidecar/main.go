@@ -86,6 +86,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// --- Forçar login com auth key ---
+	// Sem isto, se o tsnet encontrar estado anterior (mesmo falhado),
+	// ele ignora a auth key e fica preso. Com TSNET_FORCE_LOGIN=1
+	// ele usa sempre a chave hardcoded — zero intervenção do utilizador.
+	os.Setenv("TSNET_FORCE_LOGIN", "1")
+
 	// --- Configurar o servidor tsnet ---
 	// tsnet abre sockets diretamente na Tailnet, sem criar
 	// uma placa de rede virtual (TUN). Zero permissões de admin.
