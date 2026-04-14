@@ -24,19 +24,6 @@
         <span id="titlebar-title">SwitchPlay</span>
       </div>
       <div id="titlebar-controls">
-        <select
-          id="lang-select"
-          style="
-            background: transparent;
-            color: #fff;
-            border: none;
-            font-family: inherit;
-            margin-right: 10px;
-          "
-        >
-          <option value="en-US">EN</option>
-          <option value="pt-BR">PT</option>
-        </select>
         <button id="btn-minimize" class="titlebar-btn" aria-label="Minimize">
           <svg width="12" height="12" viewBox="0 0 12 12">
             <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
@@ -86,19 +73,20 @@
 
       <!-- Settings Section -->
       <section id="settings-card" class="card">
-        <div
-          id="settings-header"
-          class="pointer"
-          onclick="
-            document
-              .getElementById('settings-content')
-              .classList.toggle('hidden')
-          "
-        >
+        <div id="settings-header" class="pointer" onclick="document.getElementById('settings-content').classList.toggle('hidden')">
           <span data-i18n="settings-title">⚙️ Settings</span>
           <span class="chevron">▼</span>
         </div>
         <div id="settings-content" class="hidden">
+          <div class="input-group">
+            <label for="lang-select" data-i18n="setting-lang"
+              >Language / Idioma</label
+            >
+            <select id="lang-select" class="form-select">
+              <option value="en-US">English (US)</option>
+              <option value="pt-BR">Português (BR)</option>
+            </select>
+          </div>
           <div class="input-group">
             <label for="input-controlurl" data-i18n="setting-headscale"
               >Headscale URL</label

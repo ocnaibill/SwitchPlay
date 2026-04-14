@@ -315,3 +315,19 @@ elements.btnTransmitter.addEventListener("click", async () => {
     elements.transmitterPanel.classList.add("hidden");
   }
 });
+
+// Platform specific styling
+if (window.switchplay && window.switchplay.platform === 'darwin') {
+  // Hide custom window controls since macOS has native ones
+  const controls = document.getElementById('titlebar-controls');
+  if (controls) {
+    controls.style.display = 'none'; // Hide our custom buttons
+  }
+
+  // Move title to the right to avoid overlapping with native traffic lights on the left
+  const titleDrag = document.getElementById('titlebar-drag');
+  if (titleDrag) {
+    titleDrag.style.justifyContent = 'flex-end';
+    titleDrag.style.paddingRight = '16px';
+  }
+}

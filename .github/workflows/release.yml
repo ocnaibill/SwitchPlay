@@ -45,6 +45,21 @@ jobs:
           curl -L -o client/bin/lan-play-linux-amd64 https://github.com/spacemeowx2/switch-lan-play/releases/download/v0.2.3/lan-play-linux
           chmod +x client/bin/lan-play-*
           
+      - name: Set App Version from Git Tag
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "Setting version to $VERSION"
+            cd client
+            npm --no-git-tag-version version $VERSION --allow-same-version
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "Setting version to $VERSION"
+            cd client
+            npm --no-git-tag-version version $VERSION --allow-same-version
+          fi
+
       - name: Build & Publish Release
         shell: bash
         env:
