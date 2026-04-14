@@ -42,6 +42,8 @@ var (
         lanPlayServer string
 
         // Version metadata
+        Version = "dev"
+)
 
 // getStateDir retorna o caminho para armazenar o estado do tsnet.
 // Windows: %APPDATA%\SwitchPlay\vpn-state
