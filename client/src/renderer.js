@@ -332,47 +332,54 @@ if (window.switchplay && window.switchplay.platform === "darwin") {
   }
 }
 
-// View Navigation Context
-const mainView = document.getElementById('main-view');
-const settingsView = document.getElementById('settings-view');
-const btnOpenSettings = document.getElementById('btn-open-settings');
-const btnCloseSettings = document.getElementById('btn-close-settings');
+// View Navigation - Settings Panel
+function initViewNavigation() {
+  const mainView = document.getElementById('main-view');
+  const settingsView = document.getElementById('settings-view');
+  const btnOpenSettings = document.getElementById('btn-open-settings');
+  const btnCloseSettings = document.getElementById('btn-close-settings');
 
-if (btnOpenSettings && btnCloseSettings) {
-  btnOpenSettings.addEventListener('click', () => {
-    mainView.classList.add('hidden');
-    // Explicit inline overriding to show properly 
-    settingsView.classList.remove('hidden');
-    settingsView.style.display = 'flex';
-  });
+  console.log('🔧 Settings button found:', !!btnOpenSettings);
+  console.log('🔧 Settings view found:', !!settingsView);
+  console.log('🔧 Main view found:', !!mainView);
+  console.log('🔧 Close button found:', !!btnCloseSettings);
 
-  btnCloseSettings.addEventListener('click', () => {
-    mainView.classList.remove('hidden');
-    settingsView.classList.add('hidden');
-    settingsView.style.display = 'none';
-    
-    // Save state explicitly when leaving settings to be safe
-    saveSettings();
-  });
+  if (btnOpenSettings) {
+    btnOpenSettings.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('⚙️ Opening settings...');
+      
+      if (mainView) mainView.classList.add('hidden');
+      if (settingsView) {
+        settingsView.classList.remove('hidden');
+        settingsView.style.display = 'flex';
+      }
+    });
+  }
+
+  if (btnCloseSettings) {
+    btnCloseSettings.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔙 Closing settings...');
+      
+      if (mainView) mainView.classList.remove('hidden');
+      if (settingsView) {
+        settingsView.classList.add('hidden');
+        settingsView.style.display = 'none';
+      }
+      
+      // Save state when leaving settings
+      saveSettings();
+    });
+  }
 }
 
-// View Navigation Context
-const mainView = document.getElementById('main-view');
-const settingsView = document.getElementById('settings-view');
-const btnOpenSettings = document.getElementById('btn-open-settings');
-const btnCloseSettings = document.getElementById('btn-close-settings');
-
-if (btnOpenSettings && btnCloseSettings) {
-  btnOpenSettings.addEventListener('click', () => {
-    mainView.classList.add('hidden');
-    settingsView.classList.remove('hidden');
-  });
-
-  btnCloseSettings.addEventListener('click', () => {
-    mainView.classList.remove('hidden');
-    settingsView.classList.add('hidden');
-    
-    // Save state explicitly when leaving settings to be safe
-    saveSettings();
-  });
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initViewNavigation);
+} else {
+  // DOM is already ready
+  initViewNavigation();
 }

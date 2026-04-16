@@ -699,3 +699,27 @@ body {
     background-color: #1a1a25;
     color: #e8e8f0;
 }
+
+/* --- View Navigation --- */
+#main-view {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#settings-view {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+}
+
+#settings-view.hidden {
+    display: none !important;
+}
+
+#main-view.hidden {
+    display: none !important;
+}

@@ -64,8 +64,38 @@
     <main id="app">
       <!-- MAIN VIEW -->
       <div id="main-view">
-        <div style="position: absolute; right: 26px; top: 54px; z-index: 100;">
-          <button id="btn-open-settings" style="background:var(--bg-card);border:1px solid var(--border);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 6px rgba(0,0,0,0.1);font-size:20px;color:var(--text-secondary);" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text-primary)';this.style.transform='rotate(45deg)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)';this.style.transform='rotate(0deg)'" title="Settings">⚙️</button>
+        <div style="position: absolute; right: 26px; top: 54px; z-index: 100">
+          <button
+            id="btn-open-settings"
+            style="
+              background: var(--bg-card);
+              border: 1px solid var(--border);
+              border-radius: 50%;
+              width: 38px;
+              height: 38px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: all 0.2s;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              font-size: 20px;
+              color: var(--text-secondary);
+            "
+            onmouseover="
+              this.style.borderColor = 'var(--accent)';
+              this.style.color = 'var(--text-primary)';
+              this.style.transform = 'rotate(45deg)';
+            "
+            onmouseout="
+              this.style.borderColor = 'var(--border)';
+              this.style.color = 'var(--text-secondary)';
+              this.style.transform = 'rotate(0deg)';
+            "
+            title="Settings"
+          >
+            ⚙️
+          </button>
         </div>
         <!-- Header Section -->
         <section id="hero">
@@ -77,65 +107,67 @@
         </section>
 
         <!-- Status Card -->
-      <section id="status-card">
-        <div id="status-indicator">
-          <div id="status-dot"></div>
-          <span id="status-text" data-i18n="status-disconnected"
-            >Disconnected</span
-          >
-        </div>
-        <div id="status-details">
-          <div class="detail-item">
-            <span class="detail-label" data-i18n="status-vpn">VPN</span>
-            <span class="detail-value" id="vpn-status">—</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label" data-i18n="status-lanplay"
-              >LAN Play</span
+        <section id="status-card">
+          <div id="status-indicator">
+            <div id="status-dot"></div>
+            <span id="status-text" data-i18n="status-disconnected"
+              >Disconnected</span
             >
-            <span class="detail-value" id="lanplay-status">—</span>
           </div>
-          <div class="detail-item">
-            <span class="detail-label" data-i18n="status-server">Server</span>
-            <span class="detail-value" id="server-status">—</span>
+          <div id="status-details">
+            <div class="detail-item">
+              <span class="detail-label" data-i18n="status-vpn">VPN</span>
+              <span class="detail-value" id="vpn-status">—</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label" data-i18n="status-lanplay"
+                >LAN Play</span
+              >
+              <span class="detail-value" id="lanplay-status">—</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label" data-i18n="status-server">Server</span>
+              <span class="detail-value" id="server-status">—</span>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Connect Button -->
-      <section id="action-section">
-        <button id="btn-connect" class="btn-primary">
-          <span id="btn-connect-text" data-i18n="btn-connect">Connect</span>
-          <div id="btn-spinner" class="spinner hidden"></div>
-        </button>
-        <button
-          id="btn-transmitter"
-          class="btn-secondary"
-          data-i18n="btn-transmitter"
-        >
-          📡 Transmitter Mode
-        </button>
-      </section>
-
-      <!-- Transmitter Mode Panel (hidden by default) -->
-      <section id="transmitter-panel" class="hidden">
-        <div id="transmitter-header">
-          <span data-i18n="transmitter-header"
-            >📡 Transmitter Mode — Physical Switch</span
+        <!-- Connect Button -->
+        <section id="action-section">
+          <button id="btn-connect" class="btn-primary">
+            <span id="btn-connect-text" data-i18n="btn-connect">Connect</span>
+            <div id="btn-spinner" class="spinner hidden"></div>
+          </button>
+          <button
+            id="btn-transmitter"
+            class="btn-secondary"
+            data-i18n="btn-transmitter"
           >
-        </div>
-        <div id="transmitter-content">
-          <div id="transmitter-ip">
-            <span class="transmitter-label" data-i18n="transmitter-label"
-              >Configure your Switch Gateway to:</span
+            📡 Transmitter Mode
+          </button>
+        </section>
+
+        <!-- Transmitter Mode Panel (hidden by default) -->
+        <section id="transmitter-panel" class="hidden">
+          <div id="transmitter-header">
+            <span data-i18n="transmitter-header"
+              >📡 Transmitter Mode — Physical Switch</span
             >
-            <span id="transmitter-ip-value" class="transmitter-ip-big">—</span>
           </div>
-          <div id="transmitter-steps">
-            <!-- Steps filled by renderer.js -->
+          <div id="transmitter-content">
+            <div id="transmitter-ip">
+              <span class="transmitter-label" data-i18n="transmitter-label"
+                >Configure your Switch Gateway to:</span
+              >
+              <span id="transmitter-ip-value" class="transmitter-ip-big"
+                >—</span
+              >
+            </div>
+            <div id="transmitter-steps">
+              <!-- Steps filled by renderer.js -->
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
         <!-- Log Console -->
         <section id="log-section">
@@ -155,39 +187,114 @@
             </p>
           </div>
         </section>
-      </div> <!-- End main-view -->
+      </div>
+      <!-- End main-view -->
 
       <!-- SETTINGS VIEW (Hidden by default) -->
-      <div id="settings-view" class="hidden" style="display: flex; flex-direction: column; height: 100%; width: 100%;">
-        <div style="display: flex; align-items: center; margin-bottom: 24px; gap: 16px;">
-          <button id="btn-close-settings" style="background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-primary);border-radius:8px;padding:8px 16px;cursor:pointer;font-family:inherit;font-size:14px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--bg-card-hover)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-elevated)'">
+      <div
+        id="settings-view"
+        class="hidden"
+        style="display: flex; flex-direction: column; height: 100%; width: 100%"
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 16px;
+          "
+        >
+          <button
+            id="btn-close-settings"
+            style="
+              background: var(--bg-elevated);
+              border: 1px solid var(--border);
+              color: var(--text-primary);
+              border-radius: 8px;
+              padding: 8px 16px;
+              cursor: pointer;
+              font-family: inherit;
+              font-size: 14px;
+              transition: all 0.2s;
+            "
+            onmouseover="
+              this.style.borderColor = 'var(--accent)';
+              this.style.background = 'var(--bg-card-hover)';
+            "
+            onmouseout="
+              this.style.borderColor = 'var(--border)';
+              this.style.background = 'var(--bg-elevated)';
+            "
+          >
             ⬅ <span data-i18n="btn-back">Voltar</span>
           </button>
-          <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: var(--text-primary);" data-i18n="settings-title">⚙️ Settings</h2>
+          <h2
+            style="
+              margin: 0;
+              font-size: 20px;
+              font-weight: 600;
+              color: var(--text-primary);
+            "
+            data-i18n="settings-title"
+          >
+            ⚙️ Settings
+          </h2>
         </div>
 
-        <section id="settings-card" class="card" style="flex: 1; flex-direction: column; display: flex; gap: 20px; cursor: default;">
+        <section
+          id="settings-card"
+          class="card"
+          style="
+            flex: 1;
+            flex-direction: column;
+            display: flex;
+            gap: 20px;
+            cursor: default;
+          "
+        >
           <div class="input-group">
-            <label for="lang-select" data-i18n="setting-lang">Language / Idioma</label>
+            <label for="lang-select" data-i18n="setting-lang"
+              >Language / Idioma</label
+            >
             <select id="lang-select" class="form-select">
               <option value="en-US">English (US)</option>
               <option value="pt-BR">Português (BR)</option>
             </select>
           </div>
           <div class="input-group">
-            <label for="input-controlurl" data-i18n="setting-headscale">Headscale URL</label>
-            <input type="url" id="input-controlurl" placeholder="https://switch.yourdomain.com"/>
+            <label for="input-controlurl" data-i18n="setting-headscale"
+              >Headscale URL</label
+            >
+            <input
+              type="url"
+              id="input-controlurl"
+              placeholder="https://switch.yourdomain.com"
+            />
           </div>
           <div class="input-group">
-            <label for="input-authkey" data-i18n="setting-authkey">Tailscale Auth Key</label>
-            <input type="password" id="input-authkey" placeholder="hskey-auth-..."/>
+            <label for="input-authkey" data-i18n="setting-authkey"
+              >Tailscale Auth Key</label
+            >
+            <input
+              type="password"
+              id="input-authkey"
+              placeholder="hskey-auth-..."
+            />
           </div>
           <div class="input-group">
-            <label for="input-lanplay" data-i18n="setting-lanplay">LAN Play Server IP:PORT</label>
-            <input type="text" id="input-lanplay" placeholder="100.64.0.2:11451" value="100.64.0.2:11451"/>
+            <label for="input-lanplay" data-i18n="setting-lanplay"
+              >LAN Play Server IP:PORT</label
+            >
+            <input
+              type="text"
+              id="input-lanplay"
+              placeholder="100.64.0.2:11451"
+              value="100.64.0.2:11451"
+            />
           </div>
         </section>
-      </div> <!-- End settings-view -->
+      </div>
+      <!-- End settings-view -->
     </main>
 
     <script src="i18n.js"></script>
