@@ -243,7 +243,7 @@ class ProcessManager {
       // Tentar a arquitetura nativa primeiro, depois fallback
       const candidates = [];
       const binDir = path.join(__dirname, "..", "bin");
-      
+
       if (platform === "darwin") {
         // Em macOS, tentar native primeiro, depois x86_64 (Rosetta)
         if (arch === "arm64") {
@@ -260,7 +260,7 @@ class ProcessManager {
       }
 
       // Filtrar apenas os que existem
-      const existingCandidates = candidates.filter(f => fs.existsSync(f));
+      const existingCandidates = candidates.filter((f) => fs.existsSync(f));
 
       if (existingCandidates.length === 0) {
         const err = `Nenhum binário lan-play encontrado. Candidatos: ${candidates.join(", ")}`;
@@ -272,7 +272,13 @@ class ProcessManager {
       this._sendStatus("lanplay", "connecting", "Iniciando...");
 
       // Tentar cada candidato até um funcionar
-      this._trySpawnLanPlayWithFallback(existingCandidates, serverUrl, 0, resolve, reject);
+      this._trySpawnLanPlayWithFallback(
+        existingCandidates,
+        serverUrl,
+        0,
+        resolve,
+        reject,
+      );
     });
   }
 
@@ -327,10 +333,16 @@ class ProcessManager {
         // Não é o último, tenta o próximo
         this._sendLog(
           `${path.basename(lanPlayPath)} falhou (${err.message}), tentando próximo...`,
-          "warning"
+          "warning",
         );
         this.lanPlayProcess.kill();
-        this._trySpawnLanPlayWithFallback(candidates, serverUrl, index + 1, resolve, reject);
+        this._trySpawnLanPlayWithFallback(
+          candidates,
+          serverUrl,
+          index + 1,
+          resolve,
+          reject,
+        );
       } else {
         // É o último ou já resolveu
         if (!resolved) {
